@@ -20,7 +20,7 @@ ftsz=16;
 
 %%
 %Path to save files (select your own)
-my_path='';
+my_path='/home/amjed/Documents/Gproject/workspace/data/WSDB_DATA';
 
 %%
 %General querying parameters

@@ -1,15 +1,6 @@
 function [response,delay,error]=database_connect_google(request_type,latitude,...
     longitude,height,agl,my_path,counter)
-%DATABASE_CONNECT_GOOGLE Script used in querying Google WSDB [1].
-%
-%   Reference: [1] Will Dynamic Spectrum Access Drain my Battery?
-
-%   Code development: 
-
-%   Last update: 16 July 2014
-
-%   This work is licensed under a Creative Commons Attribution 3.0 Unported
-%   License. Link to license: http://creativecommons.org/licenses/by/3.0/
+%DATABASE_CONNECT_GOOGLE Script used in querying Google WSDB.
 
 error=false; %Default error value
 delay=[]; %Default delay value
@@ -24,10 +15,10 @@ device_type='"MODE_2"'; %Types of TVWS device: http://en.wikipedia.org/wiki/TV-b
 
  if counter<1e3
     fprintf('key 1\n');
-    key='""'; %API [replace by your own]
+    key='"AIzaSyCFBZevCyqYzwrW-i0mbb0sMtFSUt-rAnA"'; %API [replace by your own]
  elseif 1e3<=counter && counter<2e3
     fprintf('key 2\n');
-    key='""'; %API [replace by your own]
+    key='"AIzaSyCCweYzxC6BHSFqDbvDr6Jf4k1GNKWpivI"'; %API [replace by your own]
  end
 %%
 
