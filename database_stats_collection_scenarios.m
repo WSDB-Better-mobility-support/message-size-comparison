@@ -25,15 +25,6 @@ my_path='/home/amjed/Documents/Gproject/workspace/data/WSDB_DATA';
 %%
 %General querying parameters
 
-%Global Microsoft parameters (refer to http://whitespaces.msresearch.us/api.html)
-PropagationModel='"Rice"';
-CullingThreshold='-114'; %In dBm
-IncludeNonLicensed='true';
-IncludeMicrophones='true';
-UseSRTM='false';
-UseGLOBE='true';
-UseLRBCast='true';
-
 %Global Google parameters (refer to https://developers.google.com/spectrum/v1/paws/getSpectrum)
 type='"AVAIL_SPECTRUM_REQ"';
 height='30.0'; %In meters; Note: 'height' needs decimal value
@@ -49,14 +40,12 @@ DeviceType='3'; %Examples: 8-Fixed, 3-40 mW Mode II personal/portable; 4-100 mW 
     WSDB_data{1}.name='LA'; %Los Aneles, CA, USA (Wilshire Blvd 1) [downtown]
     WSDB_data{1}.latitude='34.047955';
     WSDB_data{1}.longitude='-118.256013';
-    WSDB_data{1}.delay_microsoft=[];
     WSDB_data{1}.delay_google=[];
     
     %Query finish location
     WSDB_data{2}.name='CB'; %Carolina Beach, NC, USA [ocean coast]
     WSDB_data{2}.latitude='34.047955';
     WSDB_data{2}.longitude='-77.885639';
-    WSDB_data{2}.delay_microsoft=[];
     WSDB_data{2}.delay_google=[];
     
     longitude_start=str2num(WSDB_data{1}.longitude); %Start of the spectrum scanning trajectory
@@ -66,7 +55,6 @@ DeviceType='3'; %Examples: 8-Fixed, 3-40 mW Mode II personal/portable; 4-100 mW 
     longitude_step=(longitude_end-longitude_start)/longitude_interval;
     
     delay_google=[];
-    delay_microsoft=[];
     delay_spectrumbridge=[];
     
     in=0; %Initialize request number counter
@@ -181,137 +169,10 @@ DeviceType='3'; %Examples: 8-Fixed, 3-40 mW Mode II personal/portable; 4-100 mW 
     
     %Mean
     mean_spectrumbridge_resp_size=mean(spectrumbridge_resp_size)
-    mean_microsoft_resp_size=mean(microsoft_resp_size)
     mean_google_resp_size=mean(google_resp_size)
     
     %Variance
     var_spectrumbridge_resp_size=var(spectrumbridge_resp_size)
-    var_microsoft_resp_size=var(microsoft_resp_size)
     var_google_resp_size=var(google_resp_size)
     %%
-    %Plot figure: Box plots for delay per location
-    
-    %Select maximum Y axis
-    max_el=max([delay_google_vector(1:end),...
-        delay_microsoft_vector(1:end),...
-        delay_spectrumbridge_vector(1:end)]);
-
-    if google_test==1
-        figure('Position',[440 378 560/2.5 420/2]);
-
-        boxplot(delay_google_vector,legend_label_google,...
-            'labels',labels_google,'symbol','g+','jitter',0,'notch','on',...
-            'factorseparator',1);
-        ylim([0 max_el]);
-        set(gca,'FontSize',ftsz);
-        ylabel('Response delay (sec)','FontSize',ftsz);
-        set(findobj(gca,'Type','text'),'FontSize',ftsz); %Boxplot labels size
-        %Move boxplot labels below to avoid overlap with x axis
-        txt=findobj(gca,'Type','text');
-        set(txt,'VerticalAlignment','Top');
-    end
-    if spectrumbridge_test==1
-        figure('Position',[440 378 560/2.5 420/2]);
-
-        boxplot(delay_spectrumbridge_vector,legend_label_spectrumbridge,...
-            'labels',labels_spectrumbridge,'symbol','k+','jitter',0,'notch','on',...
-            'factorseparator',1);
-        ylim([0 max_el]);
-        set(gca,'FontSize',ftsz);
-        ylabel('Response delay (sec)','FontSize',ftsz);
-        set(findobj(gca,'Type','text'),'FontSize',ftsz); %Boxplot labels size
-        %Move boxplot labels below to avoid overlap with x axis
-        txt=findobj(gca,'Type','text');
-        set(txt,'VerticalAlignment','Top');
-    end
-        
-    %Plot figure: plot delay request PDF estimates per location
-    Markers={'k-','r--','g.-','b-.','mx-','cv-'};
-    
-    %Reserve axex properties for all figures
-    fm=[];
-    xm=[];
-    fs=[];
-    xs=[];
-    fg=[];
-    xg=[];
-    
-    if google_test==1
-        figure('Position',[440 378 560 420/3]);
-        name_location_vector=[];
-        for ln=1:wsby
-            delay_google=WSDB_data{ln}.delay_google;
-            
-            %Outlier removal (Google delay)
-            outliers_pos=abs(delay_google-median(delay_google))>3*std(delay_google);
-            delay_google(outliers_pos)=[];
-            
-            [fg,xg]=ksdensity(delay_google,'support','positive');
-            fg=fg./sum(fg);
-            plot(xg,fg,Markers{ln});
-            hold on;
-            name_location=WSDB_data{ln}.name;
-            name_location_vector=[name_location_vector,{name_location}];
-        end
-        %Add plot for general webservice
-        
-        %Outlier removal (Google delay)
-        outliers_pos=abs(delay_google_web-median(delay_google_web))>3*std(delay_google_web);
-        delay_google_web(outliers_pos)=[];
-        
-        name_location_vector=[name_location_vector,'[GL]'];
-        
-        [fm,xg]=ksdensity(delay_google_web,'support','positive');
-        fg=fg./sum(fg);
-        plot(xg,fg,Markers{wsby+1});
-        
-        box on;
-        grid on;
-        set(gca,'FontSize',ftsz);
-        xlabel('Response delay (sec)','FontSize',ftsz);
-        ylabel('Probability','FontSize',ftsz);
-        legend(name_location_vector,'Location','Best');
-    end
-    if spectrumbridge_test==1
-        figure('Position',[440 378 560 420/3]);
-        name_location_vector=[];
-        for ln=1:wsby
-            delay_spectrumbridge=WSDB_data{ln}.delay_spectrumbridge;
-            
-            %Outlier removal (SpectrumBridge delay)
-            outliers_pos=abs(delay_spectrumbridge-median(delay_spectrumbridge))>3*std(delay_spectrumbridge);
-            delay_spectrumbridge(outliers_pos)=[];
-            
-            [fs,xs]=ksdensity(delay_spectrumbridge,'support','positive');
-            fs=fs./sum(fs);
-            plot(xs,fs,Markers{ln});
-            hold on;
-            name_location=WSDB_data{ln}.name;
-            name_location_vector=[name_location_vector,{name_location}];
-        end
-        %Add plot for general webservice
-        
-        %Outlier removal (SpectrumBridge delay)
-        outliers_pos=abs(delay_spectrumbridge_web-median(delay_spectrumbridge_web))>3*std(delay_spectrumbridge_web);
-        delay_spectrumbridge_web(outliers_pos)=[];
-        
-        name_location_vector=[name_location_vector,'[SB]'];
-        
-        [fs,xs]=ksdensity(delay_spectrumbridge_web,'support','positive');
-        fs=fs./sum(fs);
-        plot(xs,fs,Markers{wsby+1});
-        
-        box on;
-        grid on;
-        set(gca,'FontSize',ftsz);
-        xlabel('Response delay (sec)','FontSize',ftsz);
-        ylabel('Probability','FontSize',ftsz);
-        legend(name_location_vector,'Location','Best');
-    end
-    
-%Set y axis limit manually at the end of plot
-ylim([0 max([fg,fm,fs])]);    
-
-
-%%
 ['Elapsed time: ',num2str(toc/60),' min']
