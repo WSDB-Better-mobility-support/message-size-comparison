@@ -51,7 +51,7 @@ DeviceType='3'; %Examples: 8-Fixed, 3-40 mW Mode II personal/portable; 4-100 mW 
     longitude_start=str2num(WSDB_data{1}.longitude); %Start of the spectrum scanning trajectory
     longitude_end=str2num(WSDB_data{2}.longitude); %End of spectrum scanning trajectory
     
-    longitude_interval=100;
+    longitude_interval=5;
     longitude_step=(longitude_end-longitude_start)/longitude_interval;
     
     delay_google=[];
