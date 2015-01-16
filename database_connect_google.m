@@ -1,4 +1,4 @@
-function [response,delay,error]=database_connect_google(request_type,latitude,...
+function[response,delay,error]=database_connect_google(request_type,latitude,...
     longitude,height,agl,my_path,counter)
 %DATABASE_CONNECT_GOOGLE Script used in querying Google WSDB.
 
@@ -13,13 +13,16 @@ device_type='"MODE_2"'; %Types of TVWS device: http://en.wikipedia.org/wiki/TV-b
 %%
 %API selection
 
- if counter<1e3
+if counter<1000
     fprintf('key 1\n');
-    key='"AIzaSyCFBZevCyqYzwrW-i0mbb0sMtFSUt-rAnA"'; %API [replace by your own]
- elseif 1e3<=counter && counter<2e3
+    key='"AIzaSyCgCvElFlvB413f_B1r0K_GokydOPjssfw"'; %API [replace by your own]
+    
+elseif counter<2000 && counter >=1000
     fprintf('key 2\n');
-    key='"AIzaSyCCweYzxC6BHSFqDbvDr6Jf4k1GNKWpivI"'; %API [replace by your own]
- end
+    key='"AIzaSyBNk7twXyeLVReBPiyPx2_2fnvyOpAzUJQ"'; %API [replace by your own]
+else
+    key='"AIzaSyA49B-Vm6Nh0td03v4eJXpOQ2MAhzaeBho"'; %API [replace by your own]
+end
 %%
 
 google_query(request_type,device_type,latitude,longitude,height,agl,key);
@@ -28,6 +31,8 @@ my_path=regexprep(my_path,' ','\\ ');
 
 cmnd=['/usr/bin/curl -X POST ',server_name,' -H ',text_coding,' --data-binary @',my_path,'/google.json -w %{time_total}'];
 [status,response]=system(cmnd);
+start_res = findstr('{' , response);
+response = response(start_res(1):end);
 
 warning_google='Daily Limit Exceeded'; %Error handling in case of exceeed API limit
 
@@ -43,7 +48,7 @@ else
     response(pos_end_query_str+length_end_query_str:end)=[];
 end
 system('rm google.json');
-
+end
 function google_query(request_type,device_type,latitude,longitude,height,agl,key)
 
 request=['{"jsonrpc": "2.0",',...
@@ -70,3 +75,4 @@ request=['{"jsonrpc": "2.0",',...
     '},"id": "any_string"}'];
 
 dlmwrite('google.json',request,'');
+end

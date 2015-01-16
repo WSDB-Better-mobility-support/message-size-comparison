@@ -29,7 +29,7 @@ server_url_base='https://tvws-demo.spectrumbridge.com/v3';
 cmnd=['/usr/bin/curl "',server_url_base,'/channels/',SBI_CC,'/',Latitude,'/',Longitude,'/?fccid=',SBI_ID,'&serial=',SBI_SN,'&type=',DeviceType,'" -w %{time_total}'];
 
 [status,response]=system(cmnd);
-
+response = response(findstr(response , '<ChannelResponse') : end);
 %Calculate query delay and flag error
 end_query_str='</ChannelResponse>';
 pos_end_query_str=findstr(response,end_query_str);

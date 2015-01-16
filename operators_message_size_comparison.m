@@ -40,15 +40,15 @@ DeviceType='3'; %Examples: 8-Fixed, 3-40 mW Mode II personal/portable; 4-100 mW 
 %Query start location
 WSDB_data{1}.latitude='34.047955';
 WSDB_data{1}.longitude='-118.256013';
-
+ 
 %Query finish location
-WSDB_data{2}.latitude='34.047955';
-WSDB_data{2}.longitude='-77.885639';
+WSDB_data{2}.latitude='40.738595';
+WSDB_data{2}.longitude='-74.261878';
 
 longitude_start=str2num(WSDB_data{1}.longitude); %Start of the spectrum scanning trajectory
 longitude_end=str2num(WSDB_data{2}.longitude); %End of spectrum scanning trajectory
 
-longitude_interval=1;
+longitude_interval=500;
 longitude_step=(longitude_end-longitude_start)/longitude_interval;
 
 
@@ -99,13 +99,9 @@ if google_test==1
     %Clear old query results
     cd([my_path,'/google']);
     %Message size distribution (Google)
-    disp('dir')
     list_dir=dir
-    disp('rowb colb')
     [rowb,colb]=size({list_dir.bytes})
-    disp('google_resp_size')
     google_resp_size=[]
-    disp('for loop')
     for x=4:colb
         google_resp_size=[google_resp_size,list_dir(x).bytes]
     end
@@ -182,6 +178,7 @@ for xx=longitude_start:longitude_step:longitude_end
         end
     end
 end
+%%
 if ofcom_test==1
     %Clear old query results
     cd([my_path,'/ofcom']);
@@ -195,13 +192,13 @@ if ofcom_test==1
     %system('rm *');
     
 end
-%%
+
 %Plot figure
 if google_test==1
     figure('Position',[440 378 560 420/3]);
     [fg,xg]=ksdensity(google_resp_size,'support','positive');
     fg=fg./sum(fg);
-    plot(xg,fg,'g-');
+    plot(xg,fg,'g-' , 'LineWidth' ,1.5);
     grid on;
     box on;
     hold on;
@@ -213,10 +210,9 @@ if spectrumbridge_test==1
     %figure('Position',[440 378 560 420/2]);
     [fs,xs]=ksdensity(spectrumbridge_resp_size,'support','positive');
     fs=fs./sum(fs);
-    plot(xs,fs,'k-.');
+    plot(xs,fs,'k-.' , 'LineWidth' ,1.5);
     grid on;
     box on;
-    hold on;
     set(gca,'FontSize',ftsz);
     xlabel('Message size (bytes)','FontSize',ftsz);
     ylabel('Probability','FontSize',ftsz);
@@ -225,18 +221,31 @@ if ofcom_test==1
     %figure('Position',[440 378 560 420/2]);
     [fo,xo]=ksdensity(ofcom_resp_size,'support','positive');
     fs=fo./sum(fo);
-    plot(xo,fo,'r-.');
+    plot(xo,fo,'r-.' , 'LineWidth' ,1.5);
     grid on;
     box on;
-    hold on;
     set(gca,'FontSize',ftsz);
     xlabel('Message size (bytes)','FontSize',ftsz);
     ylabel('Probability','FontSize',ftsz);
+    hold off
 end
 %Add common legend
 legend(legend_string);
 
-%%
+% eCDF
+
+[xg,fg] = ecdf(google_resp_size);
+[xs,fs] = ecdf(spectrumbridge_resp_size);
+[xo,fo] = ecdf(ofcom_resp_size);
+figure()
+plot(fg,xg , fs, xs , fo ,xo ,  'LineWidth' ,1.5);
+grid on;
+box on;
+set(gca,'FontSize',ftsz);
+xlabel('Message size (bytes)','FontSize',ftsz);
+ylabel('Probability','FontSize',ftsz);
+legend(legend_string);
+%
 %Calculate statistics of message sizes for each WSDB
 %Mean
 mean_spectrumbridge_resp_size=mean(spectrumbridge_resp_size)
