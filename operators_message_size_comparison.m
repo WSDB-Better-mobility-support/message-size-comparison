@@ -8,11 +8,12 @@ clc;
 google_test=1; %Query Google database
 spectrumbridge_test=1; %Query spectrumBridge database
 ofcom_test= 1; %Query ofcom database
+microsoft_test=1; %Query Microsoft database
 
 %%
 %Create legend for the figures
-legend_string={'Google','SpectrumBridge', 'ofcom'};
-legend_flag=[google_test,spectrumbridge_test , ofcom_test];
+legend_string={'Google','SpectrumBridge', 'ofcom','MSR'};
+legend_flag=[google_test,spectrumbridge_test,ofcom_test,microsoft_test];
 legend_string(find(~legend_flag))=[];
 
 %%
@@ -36,11 +37,20 @@ agl='"AMSL"';
 AntennaHeight='30'; %In meters; Ignored for personal/portable devices
 DeviceType='3'; %Examples: 8-Fixed, 3-40 mW Mode II personal/portable; 4-100 mW Mode II personal/portable
 
+%Global Microsoft parameters (refer to http://whitespaces.msresearch.us/api.html)
+PropagationModel='"Rice"';
+CullingThreshold='-114'; %In dBm
+IncludeNonLicensed='true';
+IncludeMicrophones='true';
+UseSRTM='false';
+UseGLOBE='true';
+UseLRBCast='true';
+
 %Location of start and finish query
 %Query start location
 WSDB_data{1}.latitude='34.047955';
 WSDB_data{1}.longitude='-118.256013';
- 
+
 %Query finish location
 WSDB_data{2}.latitude='40.738595';
 WSDB_data{2}.longitude='-74.261878';
@@ -50,7 +60,6 @@ longitude_end=str2num(WSDB_data{2}.longitude); %End of spectrum scanning traject
 
 longitude_interval=500;
 longitude_step=(longitude_end-longitude_start)/longitude_interval;
-
 
 in=0; %Initialize request number counter
 %Initialize Google API request counter [important: it needs initliazed
@@ -94,6 +103,21 @@ for xx=longitude_start:longitude_step:longitude_end
             dlmwrite([var_name,'.txt'],msg_spectrumbridge,'');
         end
     end
+    if microsoft_test==1
+        %Query Microsoft
+        instant_clock=clock; %Start clock again if scanning only one database
+        cd([my_path,'/microsoft']);
+        [msg_microsoft,delay_microsoft_tmp,error_microsoft_tmp]=...
+            database_connect_microsoft(longitude,latitude,PropagationModel,...
+            CullingThreshold,IncludeNonLicensed,IncludeMicrophones,...
+            UseSRTM,UseGLOBE,UseLRBCast,[my_path,'/microsoft']);
+        var_name=(['microsoft_',num2str(longitude),'_',datestr(instant_clock, 'DD_mmm_YYYY_HH_MM_SS')]);
+        fprintf('Microsoft\n')
+        if error_microsoft_tmp==0
+            dlmwrite([var_name,'.txt'],msg_microsoft,'');
+            delay_microsoft=[delay_microsoft,delay_microsoft_tmp];
+        end
+    end
 end
 if google_test==1
     %Clear old query results
@@ -118,6 +142,19 @@ if spectrumbridge_test==1
     spectrumbridge_resp_size=[];
     for x=4:colb
         spectrumbridge_resp_size=[spectrumbridge_resp_size,list_dir(x).bytes];
+    end
+    %system('rm *');
+end
+if microsoft_test==1
+    %Clear old query results
+    cd([my_path,'/microsoft']);
+    
+    %Message size distribution (Microsoft)
+    list_dir=dir;
+    [rowb,colb]=size({list_dir.bytes});
+    microsoft_resp_size=[];
+    for x=4:colb
+        microsoft_resp_size=[microsoft_resp_size,list_dir(x).bytes];
     end
     %system('rm *');
 end
@@ -190,9 +227,8 @@ if ofcom_test==1
         ofcom_resp_size=[ofcom_resp_size,list_dir(x).bytes];
     end
     %system('rm *');
-    
 end
-
+%%
 %Plot figure
 if google_test==1
     figure('Position',[440 378 560 420/3]);
@@ -213,6 +249,18 @@ if spectrumbridge_test==1
     plot(xs,fs,'k-.' , 'LineWidth' ,1.5);
     grid on;
     box on;
+    set(gca,'FontSize',ftsz);
+    xlabel('Message size (bytes)','FontSize',ftsz);
+    ylabel('Probability','FontSize',ftsz);
+end
+if microsoft_test==1
+    %figure('Position',[440 378 560 420/2]);
+    [fm,xm]=ksdensity(microsoft_resp_size,'support','positive');
+    fm=fm./sum(fm);
+    plot(xm,fm,'b--');
+    grid on;
+    box on;
+    hold on;
     set(gca,'FontSize',ftsz);
     xlabel('Message size (bytes)','FontSize',ftsz);
     ylabel('Probability','FontSize',ftsz);
@@ -250,11 +298,13 @@ legend(legend_string);
 %Mean
 mean_spectrumbridge_resp_size=mean(spectrumbridge_resp_size)
 mean_google_resp_size=mean(google_resp_size)
+mean_microsoft_resp_size=mean(microsoft_resp_size)
 mean_ofcom_resp_size=mean(ofcom_resp_size)
 
 %Variance
 var_spectrumbridge_resp_size=var(spectrumbridge_resp_size)
 var_google_resp_size=var(google_resp_size)
+var_microsoft_resp_size=var(microsoft_resp_size)
 var_ofcom_resp_size=var(ofcom_resp_size)
 %%
 ['Elapsed time: ',num2str(toc/60),' min']
