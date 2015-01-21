@@ -1,4 +1,43 @@
+% operators message size comparison compare the message size of multiple
+% operators
+%   Last update: 17 January 2015
 
+% Reference:
+%   P. Pawelczak et al. (2014), "Will Dynamic Spectrum Access Drain my
+%   Battery?," submitted for publication.
+
+%   Code development: Amjed Yousef Majid (amjadyousefmajid@student.tudelft.nl),
+%                     Przemyslaw Pawelczak (p.pawelczak@tudelft.nl)
+
+% Copyright (c) 2014, Embedded Software Group, Delft University of
+% Technology, The Netherlands. All rights reserved.
+%
+% Redistribution and use in source and binary forms, with or without
+% modification, are permitted provided that the following conditions
+% are met:
+%
+% 1. Redistributions of source code must retain the above copyright notice,
+% this list of conditions and the following disclaimer.
+%
+% 2. Redistributions in binary form must reproduce the above copyright
+% notice, this list of conditions and the following disclaimer in the
+% documentation and/or other materials provided with the distribution.
+%
+% 3. Neither the name of the copyright holder nor the names of its
+% contributors may be used to endorse or promote products derived from this
+% software without specific prior written permission.
+%
+% THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+% "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+% LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+% PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+% HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+% SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+% TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+% PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+% LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+% NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+% SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 tic;
 clear all;
 close all;
@@ -12,8 +51,8 @@ microsoft_test=1; %Query Microsoft database
 
 %%
 %Create legend for the figures
-legend_string={'Google','SpectrumBridge', 'ofcom','MSR'};
-legend_flag=[google_test,spectrumbridge_test,ofcom_test,microsoft_test];
+legend_string={'Google','SpectrumBridge','MSR','Ofcom'};
+legend_flag=[google_test,spectrumbridge_test,microsoft_test,ofcom_test];
 legend_string(find(~legend_flag))=[];
 
 %%
@@ -47,18 +86,20 @@ UseGLOBE='true';
 UseLRBCast='true';
 
 %Location of start and finish query
-%Query start location
-WSDB_data{1}.latitude='34.047955';
-WSDB_data{1}.longitude='-118.256013';
+%Query start location (New York)
+ 
+WSDB_data{1}.latitude='40.725952';
+WSDB_data{1}.longitude='-74.665983';
 
-%Query finish location
-WSDB_data{2}.latitude='40.738595';
-WSDB_data{2}.longitude='-74.261878';
+
+%Query finish location (Tulsa)
+WSDB_data{2}.latitude='36.115164 ';
+WSDB_data{2}.longitude='-95.891569';
 
 longitude_start=str2num(WSDB_data{1}.longitude); %Start of the spectrum scanning trajectory
 longitude_end=str2num(WSDB_data{2}.longitude); %End of spectrum scanning trajectory
 
-longitude_interval=500;
+longitude_interval=40;
 longitude_step=(longitude_end-longitude_start)/longitude_interval;
 
 in=0; %Initialize request number counter
@@ -107,7 +148,7 @@ for xx=longitude_start:longitude_step:longitude_end
         %Query Microsoft
         instant_clock=clock; %Start clock again if scanning only one database
         cd([my_path,'/microsoft']);
-        [msg_microsoft,delay_microsoft_tmp,error_microsoft_tmp]=...
+        [msg_microsoft,~,error_microsoft_tmp]=...
             database_connect_microsoft(longitude,latitude,PropagationModel,...
             CullingThreshold,IncludeNonLicensed,IncludeMicrophones,...
             UseSRTM,UseGLOBE,UseLRBCast,[my_path,'/microsoft']);
@@ -115,48 +156,8 @@ for xx=longitude_start:longitude_step:longitude_end
         fprintf('Microsoft\n')
         if error_microsoft_tmp==0
             dlmwrite([var_name,'.txt'],msg_microsoft,'');
-            delay_microsoft=[delay_microsoft,delay_microsoft_tmp];
         end
     end
-end
-if google_test==1
-    %Clear old query results
-    cd([my_path,'/google']);
-    %Message size distribution (Google)
-    list_dir=dir
-    [rowb,colb]=size({list_dir.bytes})
-    google_resp_size=[]
-    for x=4:colb
-        google_resp_size=[google_resp_size,list_dir(x).bytes]
-    end
-    %system('rm *');
-    
-end
-if spectrumbridge_test==1
-    %Clear old query results
-    cd([my_path,'/spectrumbridge']);
-    
-    %Message size distribution (SpectrumBridge)
-    list_dir=dir;
-    [rowb,colb]=size({list_dir.bytes});
-    spectrumbridge_resp_size=[];
-    for x=4:colb
-        spectrumbridge_resp_size=[spectrumbridge_resp_size,list_dir(x).bytes];
-    end
-    %system('rm *');
-end
-if microsoft_test==1
-    %Clear old query results
-    cd([my_path,'/microsoft']);
-    
-    %Message size distribution (Microsoft)
-    list_dir=dir;
-    [rowb,colb]=size({list_dir.bytes});
-    microsoft_resp_size=[];
-    for x=4:colb
-        microsoft_resp_size=[microsoft_resp_size,list_dir(x).bytes];
-    end
-    %system('rm *');
 end
 %% ------->> UK
 %Global Ofcom parameters
@@ -183,7 +184,8 @@ WSDB_data{2}.longitude='-2.062151';
 longitude_start=str2num(WSDB_data{1}.longitude); %Start of the spectrum scanning trajectory
 longitude_end=str2num(WSDB_data{2}.longitude); %End of spectrum scanning trajectory
 
-longitude_step=(longitude_end-longitude_start)/longitude_interval;
+%longitude_step=(longitude_end-longitude_start)/longitude_interval;
+longitude_step=(longitude_end-longitude_start)/20;
 
 in=0;
 
@@ -215,15 +217,56 @@ for xx=longitude_start:longitude_step:longitude_end
         end
     end
 end
-%%
+%% 
+%US + UK results calculations
+if google_test==1
+    %Clear old query results
+    cd([my_path,'/google']);
+    %Message size distribution (Google)
+    list_dir=dir;
+    [rowb,colbg]=size({list_dir.bytes});
+    google_resp_size=[];
+    for x=4:colbg
+        google_resp_size=[google_resp_size,list_dir(x).bytes];
+    end
+    %system('rm *');
+    
+end
+if spectrumbridge_test==1
+    %Clear old query results
+    cd([my_path,'/spectrumbridge']);
+    
+    %Message size distribution (SpectrumBridge)
+    list_dir=dir;
+    [rowb,colbs]=size({list_dir.bytes});
+    spectrumbridge_resp_size=[];
+    for x=4:colbs
+        spectrumbridge_resp_size=[spectrumbridge_resp_size,list_dir(x).bytes];
+    end
+    %system('rm *');
+end
+if microsoft_test==1
+    %Clear old query results
+    cd([my_path,'/microsoft']);
+    
+    %Message size distribution (Microsoft)
+    list_dir=dir;
+    [rowb,colbm]=size({list_dir.bytes});
+    microsoft_resp_size=[];
+    for x=4:colbm
+        microsoft_resp_size=[microsoft_resp_size,list_dir(x).bytes];
+    end
+    %system('rm *');
+end
 if ofcom_test==1
     %Clear old query results
     cd([my_path,'/ofcom']);
+    
     %Message size distribution (ofcom)
     list_dir=dir;
-    [rowb,colb]=size({list_dir.bytes});
+    [rowb,colbo]=size({list_dir.bytes})
     ofcom_resp_size=[];
-    for x=4:colb
+    for x=4:colbo
         ofcom_resp_size=[ofcom_resp_size,list_dir(x).bytes];
     end
     %system('rm *');
@@ -231,7 +274,7 @@ end
 %%
 %Plot figure
 if google_test==1
-    figure('Position',[440 378 560 420/3]);
+    figure('Position',[440 378 560 620/3]);
     [fg,xg]=ksdensity(google_resp_size,'support','positive');
     fg=fg./sum(fg);
     plot(xg,fg,'g-' , 'LineWidth' ,1.5);
@@ -243,7 +286,6 @@ if google_test==1
     ylabel('Probability','FontSize',ftsz);
 end
 if spectrumbridge_test==1
-    %figure('Position',[440 378 560 420/2]);
     [fs,xs]=ksdensity(spectrumbridge_resp_size,'support','positive');
     fs=fs./sum(fs);
     plot(xs,fs,'k-.' , 'LineWidth' ,1.5);
@@ -254,7 +296,6 @@ if spectrumbridge_test==1
     ylabel('Probability','FontSize',ftsz);
 end
 if microsoft_test==1
-    %figure('Position',[440 378 560 420/2]);
     [fm,xm]=ksdensity(microsoft_resp_size,'support','positive');
     fm=fm./sum(fm);
     plot(xm,fm,'b--');
@@ -266,7 +307,6 @@ if microsoft_test==1
     ylabel('Probability','FontSize',ftsz);
 end
 if ofcom_test==1
-    %figure('Position',[440 378 560 420/2]);
     [fo,xo]=ksdensity(ofcom_resp_size,'support','positive');
     fs=fo./sum(fo);
     plot(xo,fo,'r-.' , 'LineWidth' ,1.5);
@@ -279,21 +319,21 @@ if ofcom_test==1
 end
 %Add common legend
 legend(legend_string);
-
+%%
 % eCDF
-
 [xg,fg] = ecdf(google_resp_size);
 [xs,fs] = ecdf(spectrumbridge_resp_size);
+[xm,fm] = ecdf(microsoft_resp_size);
 [xo,fo] = ecdf(ofcom_resp_size);
-figure()
-plot(fg,xg , fs, xs , fo ,xo ,  'LineWidth' ,1.5);
+figure('Position',[440 378 560 620/3]);
+plot(fg,xg,'g-',fs,xs,'k-.',fm,xm,'b--',fo ,xo,'r-.','LineWidth',1.5);
 grid on;
 box on;
 set(gca,'FontSize',ftsz);
 xlabel('Message size (bytes)','FontSize',ftsz);
 ylabel('Probability','FontSize',ftsz);
 legend(legend_string);
-%
+%%
 %Calculate statistics of message sizes for each WSDB
 %Mean
 mean_spectrumbridge_resp_size=mean(spectrumbridge_resp_size)
@@ -306,5 +346,7 @@ var_spectrumbridge_resp_size=var(spectrumbridge_resp_size)
 var_google_resp_size=var(google_resp_size)
 var_microsoft_resp_size=var(microsoft_resp_size)
 var_ofcom_resp_size=var(ofcom_resp_size)
+cd([my_path]);
+save('operators-message-size-comaprison')
 %%
 ['Elapsed time: ',num2str(toc/60),' min']

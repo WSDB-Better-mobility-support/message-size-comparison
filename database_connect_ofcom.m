@@ -61,8 +61,16 @@ cmnd=['/usr/bin/curl -X POST ',server_name,' -H ',text_coding,' --data-binary @'
 %     error = true;
 % end
 
-start_res = findstr('{' , response);
-response = response(start_res(1):end);
+ start_res = findstr(response , '{"jsonrpc"');
+ if isempty(start_res)
+     disp('Empty response ')
+ else
+     disp('----->')
+     disp(start_res)
+     response = response(start_res:end);
+ end
+
+
 
 pos_end_query_str=findstr(response,'}');
 delay=str2num(response((pos_end_query_str(end)+1):end));
