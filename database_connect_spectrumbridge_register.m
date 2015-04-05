@@ -68,6 +68,7 @@ cmnd=['/usr/bin/curl -X PUT --header',' ',text_coding,' --data-binary @',my_path
 
 [status,response]=system(cmnd);
 
+
 %Calculate registration delay
 delay=str2num(response);
 

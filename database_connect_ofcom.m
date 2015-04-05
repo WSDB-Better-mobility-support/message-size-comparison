@@ -56,25 +56,23 @@ cmnd=['/usr/bin/curl -X POST ',server_name,' -H ',text_coding,' --data-binary @'
 [status,response]=system(cmnd);
 
 %check for error
-% err = findstr('error' , response);
-% if ~isempty(err)
-%     error = true;
-% end
+err = findstr('error' , response);
+ if ~isempty(err)
+     error = true;
+end
 
  start_res = findstr(response , '{"jsonrpc"');
  if isempty(start_res)
      disp('Empty response ')
+     error=true;
  else
-     disp('----->')
-     disp(start_res)
      response = response(start_res:end);
  end
 
-
-
 pos_end_query_str=findstr(response,'}');
-delay=str2num(response((pos_end_query_str(end)+1):end));
-
+if ~isempty(pos_end_query_str)
+    delay=str2num(response((pos_end_query_str(end)+1):end));
+end 
 system('rm ofcom.json');
 
 function ofcom_query(request_type,latitude,longitude,orientation,...

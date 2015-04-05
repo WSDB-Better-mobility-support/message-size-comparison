@@ -64,6 +64,7 @@ response = response(findstr(response , '<ChannelResponse') : end);
 %Calculate query delay and flag error
 end_query_str='</ChannelResponse>';
 pos_end_query_str=findstr(response,end_query_str);
+
 if isempty(pos_end_query_str)
     error=true;
     'SpectrumBridge Error'

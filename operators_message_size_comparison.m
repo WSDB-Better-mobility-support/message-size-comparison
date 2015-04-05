@@ -42,30 +42,37 @@ tic;
 clear all;
 close all;
 clc;
-
+%%
 %Switch which database you want to query
 google_test=1; %Query Google database
 spectrumbridge_test=1; %Query spectrumBridge database
-ofcom_test= 1; %Query ofcom database
 microsoft_test=1; %Query Microsoft database
+ofcom_test= 1; %Query ofcom database
+csir_test = 1 ;
+nominet_test = 1;
+fairspectrum_test = 1 ;
 
-%%
-%Create legend for the figures
-legend_string={'Google','SpectrumBridge','MSR','Ofcom'};
-legend_flag=[google_test,spectrumbridge_test,microsoft_test,ofcom_test];
-legend_string(find(~legend_flag))=[];
-
-%%
+longitude_interval=20; % How many steps to be taken . It is any specified nunmber + 1
+%Path to save files (select your own)
+my_path='/home/amjed/Documents/Gproject/workspace/data/WSDB_DATA';
 %Plot parameters
 ftsz=16;
 
-%%
-%Path to save files (select your own)
-my_path='/home/amjed/Documents/Gproject/workspace/data/WSDB_DATA';
+ggl_err=0;
+sbi_err=0;
+mrs_err=0;
+ofc_err=0;
+nom_err=0;
+csi_err=0;
+fai_err=0;
 
 %%
-% ----->>> US
-%General querying parameters
+%Create legend for the figures
+legend_string={'GGL','SBI','MSR','OFC','CSI','NOM','FAI'};
+legend_flag=[google_test,spectrumbridge_test,microsoft_test,ofcom_test,csir_test,nominet_test,fairspectrum_test];
+legend_string(find(~legend_flag))=[];
+
+%% --------------------------->>> US
 
 %Global Google parameters (refer to https://developers.google.com/spectrum/v1/paws/getSpectrum)
 type='"AVAIL_SPECTRUM_REQ"';
@@ -87,7 +94,7 @@ UseLRBCast='true';
 
 %Location of start and finish query
 %Query start location (New York)
- 
+
 WSDB_data{1}.latitude='40.725952';
 WSDB_data{1}.longitude='-74.665983';
 
@@ -99,7 +106,6 @@ WSDB_data{2}.longitude='-95.891569';
 longitude_start=str2num(WSDB_data{1}.longitude); %Start of the spectrum scanning trajectory
 longitude_end=str2num(WSDB_data{2}.longitude); %End of spectrum scanning trajectory
 
-longitude_interval=40;
 longitude_step=(longitude_end-longitude_start)/longitude_interval;
 
 in=0; %Initialize request number counter
@@ -116,34 +122,43 @@ for xx=longitude_start:longitude_step:longitude_end
     latitude=WSDB_data{1}.latitude;
     longitude=num2str(xx);
     
-    instant_clock=clock; %Save clock for file name (if both WSDBs are queried)
     if google_test==1
         %Query Google
         ggl_cnt=ggl_cnt+1;
         instant_clock=clock; %Start clock again if scanning only one database
         cd([my_path,'/google']);
-        [msg_google,~,error_google_tmp]=database_connect_google(type,latitude,longitude,height,agl,[my_path,'/google'],ggl_cnt);
+        [msg_google,delay,error_google_tmp]=database_connect_google(type,latitude,longitude,height,agl,[my_path,'/google'],ggl_cnt);
         var_name=(['google_',num2str(longitude),'_',datestr(instant_clock, 'DD_mmm_YYYY_HH_MM_SS')]);
         fprintf('Google\n');
         if error_google_tmp==0
             dlmwrite([var_name,'.txt'],msg_google,'');
+        else
+            ggl_err = ggl_err + 1;
+         %   dlmwrite(['error/' , var_name,'.txt'],msg_google,'');
         end
     end
     if spectrumbridge_test==1
         %Query SpectrumBridge
         instant_clock=clock; %Start clock again if scanning only one database
         cd([my_path,'/spectrumbridge']);
-        if DeviceType=='8'
+        if DeviceType=='3'
             [msg_spectrumbridge,~]=database_connect_spectrumbridge_register(...
-                AntennaHeight,DeviceType,Latitude,Longitude,[my_path,'/spectrumbridge']);
+                AntennaHeight,DeviceType,latitude,longitude,[my_path,'/spectrumbridge']);
+            disp(msg_spectrumbridge)
+            disp('msg_spectrumbridge')
+            
         end
-        [msg_spectrumbridge,~,error_spectrumbridge_tmp]=database_connect_spectrumbridge(DeviceType,latitude,longitude);
+        [msg_spectrumbridge,delay,error_spectrumbridge_tmp]=database_connect_spectrumbridge(DeviceType,latitude,longitude);
         var_name=(['spectrumbridge_',num2str(longitude),'_',datestr(instant_clock, 'DD_mmm_YYYY_HH_MM_SS')]);
         fprintf('SpectrumBridge\n')
         if error_spectrumbridge_tmp==0
             dlmwrite([var_name,'.txt'],msg_spectrumbridge,'');
+        else
+            sbi_err = sbi_err+1;
+        %    dlmwrite(['error/',var_name,'.txt'],msg_spectrumbridge,'');
         end
     end
+    
     if microsoft_test==1
         %Query Microsoft
         instant_clock=clock; %Start clock again if scanning only one database
@@ -156,10 +171,13 @@ for xx=longitude_start:longitude_step:longitude_end
         fprintf('Microsoft\n')
         if error_microsoft_tmp==0
             dlmwrite([var_name,'.txt'],msg_microsoft,'');
+        else
+            mrs_err = mrs_err + 1;
+      %      dlmwrite(['error/',var_name,'.txt'],msg_microsoft,'');
         end
     end
 end
-%% ------->> UK
+%% ---------------------------------------->> UK
 %Global Ofcom parameters
 request_type='"AVAIL_SPECTRUM_REQ"';
 orientation= 45;
@@ -184,8 +202,7 @@ WSDB_data{2}.longitude='-2.062151';
 longitude_start=str2num(WSDB_data{1}.longitude); %Start of the spectrum scanning trajectory
 longitude_end=str2num(WSDB_data{2}.longitude); %End of spectrum scanning trajectory
 
-%longitude_step=(longitude_end-longitude_start)/longitude_interval;
-longitude_step=(longitude_end-longitude_start)/20;
+longitude_step=(longitude_end-longitude_start)/longitude_interval;
 
 in=0;
 
@@ -213,12 +230,123 @@ for xx=longitude_start:longitude_step:longitude_end
         fprintf('Ofcom\n')
         if error_ofcom_tmp==0
             dlmwrite([var_name,'.txt'],msg_ofcom,'');
-            
+        else
+            ofc_err = ofc_err + 1;
+            dlmwrite(['error/' , var_name,'.txt'],msg_ofcom,'');
+        end
+    end
+    if nominet_test==1
+        %Query Ofcom
+        instant_clock=clock; %Start clock again if scanning only one database
+        cd([my_path,'/nominet']);
+        
+        [msg_nominet,delay,error_ofcom_tmp]=...
+            database_connect_nominet(latitude,longitude,[my_path,'/nominet']);
+        
+        var_name=(['nominet_',num2str(longitude),'_',datestr(instant_clock, 'DD_mmm_YYYY_HH_MM_SS')]);
+        fprintf('nominet\n')
+        if error_ofcom_tmp==0
+            dlmwrite([var_name,'.txt'],msg_nominet,'');
+        else
+            nom_err = nom_err + 1;
+     %       dlmwrite(['error/',var_name,'.txt'],msg_nominet,'');
         end
     end
 end
-%% 
-%US + UK results calculations
+
+%% South Africa ----->
+%Global CSIR parameters
+
+%Location of start and finish query
+WSDB_data{1}.latitude='-24.1';
+WSDB_data{1}.longitude='24.1';
+
+
+%Query finish location
+WSDB_data{2}.latitude='-22.2';
+WSDB_data{2}.longitude='26.3';
+
+
+longitude_start=str2num(WSDB_data{1}.longitude); %Start of the spectrum scanning trajectory
+longitude_end=str2num(WSDB_data{2}.longitude); %End of spectrum scanning trajectory
+
+longitude_step=(longitude_end-longitude_start)/longitude_interval;
+
+in=0;
+
+for xx=longitude_start:longitude_step:longitude_end
+    in=in+1;
+    fprintf('Query no.: %d\n',in)
+    
+    %Fetch location data
+    latitude=WSDB_data{1}.latitude;
+    longitude=num2str(xx);
+    
+    instant_clock=clock; %Save clock for file name (if both WSDBs are queried)
+    if csir_test==1
+        
+        %Query csir
+        instant_clock=clock; %Start clock again if scanning only one database
+        cd([my_path,'/csir']);
+        
+        [msg_csir,error_csir_delay,error_csir]=...
+            database_connect_csir(latitude,longitude,[my_path,'/csir']);
+        
+        var_name=(['csir_',num2str(longitude),'_',datestr(instant_clock, 'DD_mmm_YYYY_HH_MM_SS')]);
+        fprintf('csir\n')
+        if error_csir==0
+            dlmwrite([var_name,'.txt'],msg_csir,'');
+        else
+            csi_err = csi_err +  1;
+     %       dlmwrite(['error/',var_name,'.txt'],msg_csir,'');
+        end
+    end
+end
+%% Finland -------------->
+
+%Location of start and finish query
+WSDB_data{1}.latitude='51.50727';
+WSDB_data{1}.longitude='0.127659';
+
+%Query finish location
+WSDB_data{2}.latitude='52.50727';
+WSDB_data{2}.longitude='0.227659';
+
+longitude_start=str2num(WSDB_data{1}.longitude); %Start of the spectrum scanning trajectory
+longitude_end=str2num(WSDB_data{2}.longitude); %End of spectrum scanning trajectory
+
+longitude_step=(longitude_end-longitude_start)/longitude_interval;
+
+in=0;
+
+for xx=longitude_start:longitude_step:longitude_end
+    in=in+1;
+    fprintf('Query no.: %d\n',in)
+    
+    %Fetch location data
+    latitude=WSDB_data{1}.latitude;
+    longitude=num2str(xx);
+    
+    if fairspectrum_test==1
+        
+        %Query fairspectrum
+        instant_clock=clock; %Start clock again if scanning only one database
+        cd([my_path,'/fairspectrum']);
+        
+        [msg_fairspectrum,delay,error_fairspectrum]=...
+            database_connect_fairspectrum(latitude,longitude,[my_path,'/fairspectrum']);
+        
+        var_name=(['fairspectrum_',num2str(longitude),'_',datestr(instant_clock, 'DD_mmm_YYYY_HH_MM_SS')]);
+        fprintf('fairspectrum\n')
+        if error_fairspectrum==0
+            dlmwrite([var_name,'.txt'],msg_fairspectrum,'');
+        else
+            csi_err = csi_err +  1;
+    %        dlmwrite(['error/',var_name,'.txt'],msg_fairspectrum,'');
+        end
+    end
+end
+%% Results calculations -------------->
 if google_test==1
     %Clear old query results
     cd([my_path,'/google']);
@@ -269,10 +397,50 @@ if ofcom_test==1
     for x=4:colbo
         ofcom_resp_size=[ofcom_resp_size,list_dir(x).bytes];
     end
+end
+if nominet_test==1
+    %Clear old query results
+    cd([my_path,'/nominet']);
+    
+    %Message size distribution (ofcom)
+    list_dir=dir;
+    [rowb,colbo]=size({list_dir.bytes})
+    nominet_resp_size=[];
+    for x=4:colbo
+        nominet_resp_size=[nominet_resp_size,list_dir(x).bytes];
+    end
     %system('rm *');
 end
+if csir_test==1
+    %Clear old query results
+    cd([my_path,'/csir']);
+    
+    %Message size distribution (ofcom)
+    list_dir=dir;
+    [rowb,colbo]=size({list_dir.bytes})
+    csir_resp_size=[];
+    for x=4:colbo
+        csir_resp_size=[csir_resp_size,list_dir(x).bytes];
+    end
+    %system('rm *');
+end
+if fairspectrum_test==1
+    %Clear old query results
+    cd([my_path,'/fairspectrum']);
+    
+    %Message size distribution (ofcom)
+    list_dir=dir;
+    [rowb,colbo]=size({list_dir.bytes})
+    fairspectrum_resp_size=[];
+    for x=4:colbo
+        fairspectrum_resp_size=[fairspectrum_resp_size,list_dir(x).bytes];
+    end
+    %system('rm *');
+end
+
 %%
 %Plot figure
+
 if google_test==1
     figure('Position',[440 378 560 620/3]);
     [fg,xg]=ksdensity(google_resp_size,'support','positive');
@@ -284,6 +452,10 @@ if google_test==1
     set(gca,'FontSize',ftsz);
     xlabel('Message size (bytes)','FontSize',ftsz);
     ylabel('Probability','FontSize',ftsz);
+    [xg,fg] = ecdf(google_resp_size); % CDF
+    mean_google_resp_size=mean(google_resp_size) % stats
+    var_google_resp_size=var(google_resp_size)
+    ggl_err_rate = ggl_err/(longitude_interval+1)
 end
 if spectrumbridge_test==1
     [fs,xs]=ksdensity(spectrumbridge_resp_size,'support','positive');
@@ -294,6 +466,11 @@ if spectrumbridge_test==1
     set(gca,'FontSize',ftsz);
     xlabel('Message size (bytes)','FontSize',ftsz);
     ylabel('Probability','FontSize',ftsz);
+    [xs,fs] = ecdf(spectrumbridge_resp_size); % CDF
+    mean_spectrumbridge_resp_size=mean(spectrumbridge_resp_size) % stats
+    var_spectrumbridge_resp_size=var(spectrumbridge_resp_size)
+     sbi_err_rate = sbi_err/(longitude_interval+1)
+    
 end
 if microsoft_test==1
     [fm,xm]=ksdensity(microsoft_resp_size,'support','positive');
@@ -305,47 +482,86 @@ if microsoft_test==1
     set(gca,'FontSize',ftsz);
     xlabel('Message size (bytes)','FontSize',ftsz);
     ylabel('Probability','FontSize',ftsz);
+    [xm,fm] = ecdf(microsoft_resp_size); %CDF
+    mean_microsoft_resp_size=mean(microsoft_resp_size) % stats
+    var_microsoft_resp_size=var(microsoft_resp_size)
+     mrs_err_rate = mrs_err/(longitude_interval+1)
 end
 if ofcom_test==1
     [fo,xo]=ksdensity(ofcom_resp_size,'support','positive');
-    fs=fo./sum(fo);
+    fo=fo./sum(fo);
     plot(xo,fo,'r-.' , 'LineWidth' ,1.5);
     grid on;
     box on;
     set(gca,'FontSize',ftsz);
     xlabel('Message size (bytes)','FontSize',ftsz);
     ylabel('Probability','FontSize',ftsz);
-    hold off
+    [xo,fo] = ecdf(ofcom_resp_size); %CDF
+    mean_ofcom_resp_size=mean(ofcom_resp_size) % stats
+    var_ofcom_resp_size=var(ofcom_resp_size)
+    ofc_err_rate = ofc_err/(longitude_interval+1)
 end
+if nominet_test==1
+    [fn,xn]=ksdensity(nominet_resp_size,'support','positive');
+    fn=fn./sum(fn);
+    plot(xn,fn,'k--' , 'LineWidth' ,1.5);
+    grid on;
+    box on;
+    set(gca,'FontSize',ftsz);
+    xlabel('Message size (bytes)','FontSize',ftsz);
+    ylabel('Probability','FontSize',ftsz);
+    [xn,fn] = ecdf(nominet_resp_size); %CDF
+    mean_nominet_resp_size=mean(nominet_resp_size) % stats
+    var_nominet_resp_size=var(nominet_resp_size)
+    nom_err_rate = nom_err/(longitude_interval+1)
+end
+
+if csir_test==1
+    [fc,xc]=ksdensity(csir_resp_size,'support','positive');
+    fc=fc./sum(fc);
+    plot(xc,fc,'y-' , 'LineWidth' ,1.5);
+    grid on;
+    box on;
+    set(gca,'FontSize',ftsz);
+    xlabel('Message size (bytes)','FontSize',ftsz);
+    ylabel('Probability','FontSize',ftsz);
+    [xc,fc] = ecdf(csir_resp_size);
+    mean_csir_resp_size=mean(csir_resp_size) % stats
+    var_csir_resp_size=var(csir_resp_size)
+    csi_err_rate = csi_err/(longitude_interval+1)
+end
+
+if fairspectrum_test==1
+    [ff,xf]=ksdensity(fairspectrum_resp_size,'support','positive');
+    ff=ff./sum(ff);
+    plot(xf,ff,'m--' , 'LineWidth' ,1.5);
+    grid on;
+    box on;
+    set(gca,'FontSize',ftsz);
+    xlabel('Message size (bytes)','FontSize',ftsz);
+    ylabel('Probability','FontSize',ftsz);
+    hold off
+    [xf,ff] = ecdf(fairspectrum_resp_size);
+    mean_fairspectrum_resp_size=mean(fairspectrum_resp_size) % stats
+    var_fairspectrum_resp_size=var(fairspectrum_resp_size)
+    fai_err_rate = fai_err/(longitude_interval+1)
+end
+
 %Add common legend
 legend(legend_string);
+
 %%
-% eCDF
-[xg,fg] = ecdf(google_resp_size);
-[xs,fs] = ecdf(spectrumbridge_resp_size);
-[xm,fm] = ecdf(microsoft_resp_size);
-[xo,fo] = ecdf(ofcom_resp_size);
 figure('Position',[440 378 560 620/3]);
-plot(fg,xg,'g-',fs,xs,'k-.',fm,xm,'b--',fo ,xo,'r-.','LineWidth',1.5);
+plot(fg,xg,'g-',fs,xs,'k-.',fm,xm,'b--',fo ,xo,'r-.',fn,xn,'k--',fc,xc,'y-',ff,xf,'m--','LineWidth',1.5);
 grid on;
 box on;
 set(gca,'FontSize',ftsz);
 xlabel('Message size (bytes)','FontSize',ftsz);
 ylabel('Probability','FontSize',ftsz);
 legend(legend_string);
-%%
-%Calculate statistics of message sizes for each WSDB
-%Mean
-mean_spectrumbridge_resp_size=mean(spectrumbridge_resp_size)
-mean_google_resp_size=mean(google_resp_size)
-mean_microsoft_resp_size=mean(microsoft_resp_size)
-mean_ofcom_resp_size=mean(ofcom_resp_size)
 
-%Variance
-var_spectrumbridge_resp_size=var(spectrumbridge_resp_size)
-var_google_resp_size=var(google_resp_size)
-var_microsoft_resp_size=var(microsoft_resp_size)
-var_ofcom_resp_size=var(ofcom_resp_size)
+%%
+%Save statistics of message sizes for each WSDBDs
 cd([my_path]);
 save('operators-message-size-comaprison')
 %%

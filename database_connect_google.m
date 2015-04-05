@@ -54,17 +54,13 @@ device_type='"MODE_2"'; %Types of TVWS device: http://en.wikipedia.org/wiki/TV-b
 %API selection
 
 if counter<1000
-    fprintf('key 1\n');
     key='"AIzaSyAYMovM80dqfP8kwFXPyO8A-GMSOl-Bmu0"'; %API [replace by your own]
-    
 elseif counter<2000 && counter >=1000
-    fprintf('key 2\n');
     key='"AIzaSyBNk7twXyeLVReBPiyPx2_2fnvyOpAzUJQ"'; %API [replace by your own]
 else
     key='"AIzaSyA49B-Vm6Nh0td03v4eJXpOQ2MAhzaeBho"'; %API [replace by your own]
 end
 %%
-
 google_query(request_type,device_type,latitude,longitude,height,agl,key);
 
 my_path=regexprep(my_path,' ','\\ ');
@@ -72,8 +68,16 @@ my_path=regexprep(my_path,' ','\\ ');
 cmnd=['/usr/bin/curl -X POST ',server_name,' -H ',text_coding,' --data-binary @',my_path,'/google.json -w %{time_total}'];
 [status,response]=system(cmnd);
 
+% removing some extra lines added by my compauter due to libraries version
 start_res = findstr('{' , response);
-response = response(start_res(1):end);
+if ~isempty(start_res)
+    response = response(start_res(1):end);
+end
+
+% check if the response has an error message
+if ~isempty(findstr('error' , response) )
+    error = 1 ;
+end
 
 warning_google='Daily Limit Exceeded'; %Error handling in case of exceeed API limit
 
@@ -84,7 +88,6 @@ else
     end_query_str='"FccTvBandWhiteSpace-2010"';
     pos_end_query_str=findstr(response,end_query_str);
     length_end_query_str=length(end_query_str)+14; %Note: constant 14 added due to padding of '}' in JSON response
-    response(pos_end_query_str+length_end_query_str:end);
     delay=str2num(response(pos_end_query_str+length_end_query_str:end));
     response(pos_end_query_str+length_end_query_str:end)=[];
 end
