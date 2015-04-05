@@ -52,7 +52,7 @@ csir_test = 1 ;
 nominet_test = 1;
 fairspectrum_test = 1 ;
 
-longitude_interval=20; % How many steps to be taken . It is any specified nunmber + 1
+longitude_interval=100; % How many steps to be taken . It is any specified nunmber + 1
 %Path to save files (select your own)
 my_path='/home/amjed/Documents/Gproject/workspace/data/WSDB_DATA';
 %Plot parameters
@@ -310,7 +310,7 @@ WSDB_data{1}.longitude='0.127659';
 
 %Query finish location
 WSDB_data{2}.latitude='52.50727';
-WSDB_data{2}.longitude='0.227659';
+WSDB_data{2}.longitude='1.227659';
 
 longitude_start=str2num(WSDB_data{1}.longitude); %Start of the spectrum scanning trajectory
 longitude_end=str2num(WSDB_data{2}.longitude); %End of spectrum scanning trajectory
@@ -357,8 +357,6 @@ if google_test==1
     for x=4:colbg
         google_resp_size=[google_resp_size,list_dir(x).bytes];
     end
-    %system('rm *');
-    
 end
 if spectrumbridge_test==1
     %Clear old query results
@@ -371,7 +369,6 @@ if spectrumbridge_test==1
     for x=4:colbs
         spectrumbridge_resp_size=[spectrumbridge_resp_size,list_dir(x).bytes];
     end
-    %system('rm *');
 end
 if microsoft_test==1
     %Clear old query results
@@ -384,7 +381,6 @@ if microsoft_test==1
     for x=4:colbm
         microsoft_resp_size=[microsoft_resp_size,list_dir(x).bytes];
     end
-    %system('rm *');
 end
 if ofcom_test==1
     %Clear old query results
@@ -409,7 +405,6 @@ if nominet_test==1
     for x=4:colbo
         nominet_resp_size=[nominet_resp_size,list_dir(x).bytes];
     end
-    %system('rm *');
 end
 if csir_test==1
     %Clear old query results
@@ -422,7 +417,6 @@ if csir_test==1
     for x=4:colbo
         csir_resp_size=[csir_resp_size,list_dir(x).bytes];
     end
-    %system('rm *');
 end
 if fairspectrum_test==1
     %Clear old query results
@@ -435,7 +429,6 @@ if fairspectrum_test==1
     for x=4:colbo
         fairspectrum_resp_size=[fairspectrum_resp_size,list_dir(x).bytes];
     end
-    %system('rm *');
 end
 
 %%
@@ -564,5 +557,15 @@ legend(legend_string);
 %Save statistics of message sizes for each WSDBDs
 cd([my_path]);
 save('operators-message-size-comaprison')
+% display the results 
+disp('*******************************************')
+fprintf('Google: average size: %d variance: %d , error rate: %d \n', mean_google_resp_size , var_google_resp_size ,ggl_err_rate )
+fprintf('spectrumbridge: average size: %d variance: %d , error rate: %d \n', mean_spectrumbridge_resp_size , var_spectrumbridge_resp_size ,sbi_err_rate )
+fprintf('Microsoft: average size: %d variance: %d , error rate: %d \n', mean_microsoft_resp_size , var_microsoft_resp_size ,mrs_err_rate )
+fprintf('Ofcom: average size: %d variance: %d , error rate: %d \n', mean_ofcom_resp_size , var_ofcom_resp_size ,ofc_err_rate )
+fprintf('nominet: average size: %d variance: %d , error rate: %d \n', mean_nominet_resp_size , var_nominet_resp_size ,nom_err_rate )
+fprintf('CSIR: average size: %d variance: %d , error rate: %d \n', mean_csir_resp_size , var_csir_resp_size ,csi_err_rate )
+fprintf('Fairspectrum: average size: %d variance: %d , error rate: %d \n', mean_fairspectrum_resp_size , var_fairspectrum_resp_size ,fai_err_rate )
+
 %%
 ['Elapsed time: ',num2str(toc/60),' min']
