@@ -68,7 +68,7 @@ fai_err=0;
 
 %%
 %Create legend for the figures
-legend_string={'GGL','SBI','MSR','OFC','CSI','NOM','FAI'};
+legend_string={'GGL','SBI','MSR','SBO','NOM','CSI','FAI'};
 legend_flag=[google_test,spectrumbridge_test,microsoft_test,ofcom_test,csir_test,nominet_test,fairspectrum_test];
 legend_string(find(~legend_flag))=[];
 
@@ -302,7 +302,7 @@ for xx=longitude_start:longitude_step:longitude_end
         end
     end
 end
-%% Finland -------------->
+%% Finland????????????????  -------------->
 
 %Location of start and finish query
 WSDB_data{1}.latitude='51.50727';
@@ -545,14 +545,14 @@ legend(legend_string);
 
 %%
 figure('Position',[440 378 560 620/3]);
-plot(fg,xg,'g-',fs,xs,'k-.',fm,xm,'b--',fo ,xo,'r-.',fn,xn,'k--',fc,xc,'y-',ff,xf,'m--','LineWidth',1.5);
+plot(fg,xg,'g-',fs,xs,'k:',fm,xm,'b-.',fo ,xo,'r--',fn,xn,'k-',fc,xc,'c-.',ff,xf,'m--','LineWidth',1.5);
 grid on;
 box on;
 set(gca,'FontSize',ftsz);
 xlabel('Message size (bytes)','FontSize',ftsz);
 ylabel('Probability','FontSize',ftsz);
-legend(legend_string);
-
+leg=legend(legend_string);
+set(leg,'FontSize', (ftsz-2) );
 %%
 %Save statistics of message sizes for each WSDBDs
 cd([my_path]);
