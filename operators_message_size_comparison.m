@@ -545,14 +545,14 @@ legend(legend_string);
 
 %%
 figure('Position',[440 378 560 620/3]);
-plot(fg,xg,'g-',fs,xs,'k:',fm,xm,'b-.',fo ,xo,'r--',fn,xn,'k-',fc,xc,'c-.',ff,xf,'m--','LineWidth',1.5);
+plot(fg,xg,'g-',fs,xs,'k:',fm,xm,'b-+',fo ,xo,'r--',fn,xn,'k-^',fc,xc,'k-.',ff,xf,'m-o','LineWidth',1.5);
 grid on;
 box on;
 set(gca,'FontSize',ftsz);
 xlabel('Message size (bytes)','FontSize',ftsz);
 ylabel('Probability','FontSize',ftsz);
 leg=legend(legend_string);
-set(leg,'FontSize', (ftsz-2) );
+set(leg,'FontSize', (ftsz) );
 %%
 %Save statistics of message sizes for each WSDBDs
 cd([my_path]);
